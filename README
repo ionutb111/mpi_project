@@ -1,0 +1,71 @@
+NUME: BRINZAN IONUT
+GRUPA: 336CC
+
+README
+
+TEMA 3
+
+1.Rulare
+2.Detalii implementare
+
+1.Rulare
+
+Pentru rulare pe coada se foloseste fisierul script.
+Makefile-ul este prezent si contine regulile:
+-build
+-clean (sterge doar binarul)
+
+Dupa make build:
+mpirun -np NR ./filtru topologie.in imagini.in statistica.out
+unde NR este numarul de procese
+
+Comanda cu care am rulat pe cluster este:
+qsub -cwd -q campus-haswell.q script
+
+2.Detalii de implementare
+
+Tema a fost implementata in C++ => fisierul filtru.cpp.
+Tema este impartita in 3 parti:
+-aflarea vecinilor
+-trimiterea pozelor si aplicarea filtrelor pe aceasta
+-statistica si terminare
+
+Pentru aflarea vecinilor fiecare nod isi va citi din fisierul topologie.in
+vecinii sai si ii va retine intr-un vector de vecini "neigh".
+Inainte de a incepe sa folosim fisierul imagini.in pentru trimitere de poze
+vom initializa vectorul stats(vectorul unde vom cunoaste la final nr de linii
+procesate de fiecare nod).
+
+In etapa urmatoare ne intereseaza daca suntem lider sau nu.Daca nu suntem un 
+nod lider vom fi blocati cu un recv si vom astepta pana cand vom primi un 
+mesaj care poate fi o noua poza sau un mesaj prin care ni se cere statistica.
+Nodul lider in aceasta etapa va anunta ca va trimite o imagine ,dupa care
+va trimite fiecarui copil ce dimensiune o sa aiba bucata de imagine pe care
+o vor primi si va trimite imaginea cu tagul ales in functie de ce filtru 
+trebuie aplicat dupa care v-a astepta sa primeasca imaginea prelucrata si o
+va scrie in fisierul de output specific.Liderul va repeta acesti pasi cat timp
+avem de aplicat filtre pe poze.
+
+Daca nu suntem nod lider si am primit un mesaj cu tag 0 (tag pentru primire 
+imagine si aplicare filtru). Asteptam sa primim dimensiunile bucatii de 
+imagine pe care o vom procesa(daca suntem frunza) sau pe care o vom imparti
+si trimite mai departe copiilor in caz contrar.Daca nu suntem frunza o 
+impartim si o trimitem copiilor si asteptam sa primim de la copii bucata de 
+imagine cu filtru aplicat dupa care o trimitem parintelui.Daca suntem frunza
+aplicam filtru pe bucata de imagine si o trimitem parintelui.
+
+Dupa ce am aplicat filtre pe toate pozele daca suntem lider cerem statistica
+si le spunem nodurilor ca pot sa termine executia dupa ce au trimis 
+statistica.Acest lucru se face prin trimiterea la copii a unui mesaj cu tag 9
+si asteptarea primiri statisticilor de la toti copiii si actualizarea 
+statistici locale urmata la final de scrierea in fisierul de statistica.
+Dupa ce am primit statisticile si le-am unit si le-am scris in fisierul 
+de statistica ne terminam executia.
+
+Daca nu suntem lider si primim mesaj cu tag 9: daca nu suntem frunze trimitem
+la copii un mesaj tot cu tag 9 si asteptam statisticile si le unim. Dupa ce
+am primit de la toti copii trimitem la parinte statistica rezultata.Daca 
+suntem frunza trimitem statistica noastra la parinte.Dupa ce un nod isi 
+trimite statistica la parinte acesta termina executia.
+
+BRINZAN IONUT 336CC
